@@ -63,6 +63,13 @@ def orbital_period_min(altitude):
     return period_seconds / 60
 
 
+def circular_speed_km_s(altitude):
+    """Circular-orbit speed in km/s."""
+    validate_altitude(altitude)
+    radius = orbital_radius(altitude)
+    return math.sqrt(mu / radius)
+
+
 def run_self_checks():
     print("self-checks:")
     test_cases = [
@@ -83,7 +90,7 @@ def run_self_checks():
         except ValueError as e:
             assert expected == ValueError, f"Test failed for altitude {altitude}: expected {expected}, got ValueError: {e}"
 
-    print("physics sanity check:")
+    print("physics checks:")
     leo_min = orbital_period_min(400)
     geo_min = orbital_period_min(geo_altitude_km)
     assert abs(leo_min - 92.5) < 1, f"LEO period sanity check failed: expected ~92.5 minutes, got {leo_min:.2f} minutes"
@@ -91,18 +98,47 @@ def run_self_checks():
     print(f"  400 km period: {leo_min:.2f} min (expected ~92.5)")
     print(f"  GEO period:    {geo_min:.2f} min (expected ~1436)")
 
-    print(f"All {len(test_cases)} classification checks and 2 physics checks passed successfully.")
+    # Speed vs hand calculations (docs/hand_calculations.md)
+    speed_cases = [
+        (400, 7.669),
+        (20200, 3.873),
+        (35786, 3.075),
+    ]
+    for altitude, expected_speed in speed_cases:
+        actual_speed = circular_speed_km_s(altitude)
+        assert abs(actual_speed - expected_speed) < 0.01, (
+            f"Speed check failed at {altitude} km: "
+            f"expected {expected_speed} km/s, got {actual_speed:.3f} km/s"
+        )
+        print(f"  {altitude} km speed: {actual_speed:.3f} km/s (hand value {expected_speed})")
+
+    for altitude in (0, -5):
+        try:
+            circular_speed_km_s(altitude)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected ValueError for altitude {altitude} km")
+
+    # Consistency: speed * period = circumference (2*pi*r), at every valid altitude
+    for altitude in [400, 2000, 2001, 20200, 35786, 50000]:
+        lhs = circular_speed_km_s(altitude) * orbital_period_min(altitude) * 60
+        rhs = 2 * math.pi * orbital_radius(altitude)
+        assert math.isclose(lhs, rhs, rel_tol=1e-9), f"v*T != 2*pi*r at {altitude} km"
+
+    print("All classification and physics checks passed successfully.")
 
 
 def print_report(altitude):
     try:
         orbit_class = classify_orbit(altitude)
         radius = orbital_radius(altitude)
+        speed = circular_speed_km_s(altitude)
         period = orbital_period_min(altitude)
-        print(f"Altitude: {altitude} km -> Orbit Class: {orbit_class}, Orbital Radius: {radius:.2f} km, Orbital Period: {period:.2f} minutes")
+        print(f"Altitude: {altitude} km -> Orbit Class: {orbit_class}, Orbital Radius: {radius:.2f} km, "
+              f"Speed: {speed:.3f} km/s, Orbital Period: {period:.2f} minutes")
     except ValueError as e:
         print(f"Altitude: {altitude} km -> Error: {e}")
-
 
 if __name__ == "__main__":
     run_self_checks()
