@@ -1,0 +1,92 @@
+[
+  {
+    "id": 25544,
+    "name": "ISS",
+    "altitude_km": 408.0,
+    "orbit_class": "LEO",
+    "radius_km": 6786.14,
+    "speed_km_s": 7.664,
+    "period_min": 92.72
+  },
+  {
+    "id": 20580,
+    "name": "HUBBLE",
+    "altitude_km": 540.0,
+    "orbit_class": "LEO",
+    "radius_km": 6918.14,
+    "speed_km_s": 7.591,
+    "period_min": 95.44
+  },
+  {
+    "id": 27424,
+    "name": "AQUA",
+    "altitude_km": 705.0,
+    "orbit_class": "LEO",
+    "radius_km": 7083.14,
+    "speed_km_s": 7.502,
+    "period_min": 98.88
+  },
+  {
+    "id": 25994,
+    "name": "TERRA",
+    "altitude_km": 705.0,
+    "orbit_class": "LEO",
+    "radius_km": 7083.14,
+    "speed_km_s": 7.502,
+    "period_min": 98.88
+  },
+  {
+    "id": 43013,
+    "name": "NOAA 20",
+    "altitude_km": 824.0,
+    "orbit_class": "LEO",
+    "radius_km": 7202.14,
+    "speed_km_s": 7.439,
+    "period_min": 101.38
+  },
+  {
+    "id": 48274,
+    "name": "STARLINK-3001",
+    "altitude_km": 550.0,
+    "orbit_class": "LEO",
+    "radius_km": 6928.14,
+    "speed_km_s": 7.585,
+    "period_min": 95.65
+  },
+  {
+    "id": 40697,
+    "name": "SENTINEL-2A",
+    "altitude_km": 786.0,
+    "orbit_class": "LEO",
+    "radius_km": 7164.14,
+    "speed_km_s": 7.459,
+    "period_min": 100.58
+  },
+  {
+    "id": 24876,
+    "name": "GPS BIIR-2",
+    "altitude_km": 20200.0,
+    "orbit_class": "MEO",
+    "radius_km": 26578.14,
+    "speed_km_s": 3.873,
+    "period_min": 718.7
+  },
+  {
+    "id": 41866,
+    "name": "GOES-16",
+    "altitude_km": 35786.0,
+    "orbit_class": "GEO",
+    "radius_km": 42164.14,
+    "speed_km_s": 3.075,
+    "period_min": 1436.07
+  },
+  {
+    "id": 28654,
+    "name": "NOAA 18",
+    "altitude_km": 854.0,
+    "orbit_class": "LEO",
+    "radius_km": 7232.14,
+    "speed_km_s": 7.424,
+    "period_min": 102.01
+  }
+]
