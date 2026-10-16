@@ -1,12 +1,13 @@
 # orbital-mechanics-calculator
 
-A Python toolkit that classifies satellite orbits, computes circular-orbit speed and period, and parses a list of satellites from a text file. Includes input validation, built-in self-checks, physics sanity checks, and hand-validated results.
+A Python toolkit that classifies satellite orbits, computes circular-orbit speed and period, parses a list of satellites from a text file, and models any elliptical two-body orbit (energy, angular momentum, vis-viva speeds). Includes input validation, built-in self-checks, physics sanity checks, and hand-validated results.
 
 ## What it does
 
 1. Classifies a satellite's orbit (LEO, MEO, GEO or Beyond GEO) from its altitude.
 2. Computes the orbital radius, circular-orbit speed, and circular-orbit period for any altitude.
 3. Reads a list of satellites from a plain-text file, computes orbit values for each valid satellite, and saves the results as CSV and JSON.
+4. Models an elliptical orbit from its semi-major axis and eccentricity: periapsis and apoapsis, period, specific energy, angular momentum, and speed at any radius.
 
 ## Classification rules
 
@@ -42,7 +43,30 @@ Zero or negative altitudes are rejected with a `ValueError`.
 - `print_table(records)` — aligned console table.
 - `print_skipped(bad)` — skipped-lines report with line number, text and reason.
 
+### orbit_class.py
+
+`Orbit(a, e)` represents one two-body orbit, defined by semi-major axis `a` (km) and eccentricity `e`.
+
+- **Validation in the constructor:** rejects `e` outside 0 ≤ e < 1, and any orbit whose periapsis `a(1 − e)` is at or below Earth's radius. An invalid orbit can never be created, so no other method needs to re-check.
+- **Properties** (calculated from `a` and `e` each time they are read, so they can never go out of date): `periapsis`, `apoapsis`, `period_min`, `specific_energy`, `angular_momentum`, `periapsis_speed`, `apoapsis_speed`.
+- **Method** `speed_at_radius(r)` — vis-viva speed at radius `r`; raises `ValueError` if `r` is outside [periapsis, apoapsis]. It is a method rather than a property because it needs an input.
+- `__repr__` — readable summary of every property.
+- `run_checks()` — self-checks against hand calculations and conservation of energy (see Validation).
+
+Usage:
+
+```python
+from orbit_class import Orbit
+
+transfer = Orbit(24471, 0.72)
+transfer.period_min            # 634.95
+transfer.apoapsis_speed        # 1.628
+transfer.speed_at_radius(20000)
+```
+
 ## Formulas
+
+Circular orbits (`calculator.py`):
 
 ```
 Period:  T = 2 * pi * sqrt(r^3 / mu)
@@ -50,6 +74,18 @@ Speed:   v = sqrt(mu / r)
 ```
 
 where `r` is the orbital radius (Earth radius + altitude) and `mu` is Earth's gravitational parameter.
+
+Elliptical orbits (`orbit_class.py`):
+
+```
+Periapsis / apoapsis:   r_p = a(1 - e),   r_a = a(1 + e)
+Period:                 T = 2 * pi * sqrt(a^3 / mu)
+Specific energy:        eps = v^2/2 - mu/r = -mu / (2a)
+Angular momentum:       h = sqrt(mu * a * (1 - e^2))
+Vis-viva:               v = sqrt(mu * (2/r - 1/a))
+```
+
+Energy and angular momentum are the same at every point on the orbit. Vis-viva gives the speed at any radius from only `r` and `a`.
 
 ## Constants and units
 
@@ -72,6 +108,7 @@ git clone git@github.com:dkumar2016/orbital-mechanics-calculator.git
 cd orbital-mechanics-calculator
 py calculator.py
 py parse_satellites.py
+py orbit_class.py
 ```
 
 ## Calculator example output
@@ -136,16 +173,65 @@ Skipped lines (4):
   line 14: '54321 NEGSAT -5' -> invalid altitude - altitude must be positive: '-5'
 ```
 
+## Orbit class example output
+
+```
+Running Orbit class checks...
+
+ISS circular: period = 92.56 min  (expected ~92.6)
+Transfer periapsis speed: 10.003 km/s  (expected ~10.00)
+Transfer apoapsis speed:  1.628 km/s  (expected ~1.63)
+Energy conservation check passed ✓
+
+All checks passed.
+
+--- Three test orbits ---
+
+=== ISS-like ===
+Orbit(a=6778.0 km, e=0.0010)
+  Periapsis:        6771.2 km  |  speed: 7.676 km/s
+  Apoapsis:         6784.8 km  |  speed: 7.661 km/s
+  Period:           92.56 min
+  Specific energy:  -29.40 km^2/s^2
+  Angular momentum: 51978.0 km^2/s
+
+=== Transfer ===
+Orbit(a=24471.0 km, e=0.7200)
+  Periapsis:        6851.9 km  |  speed: 10.003 km/s
+  Apoapsis:         42090.1 km  |  speed: 1.628 km/s
+  Period:           634.95 min
+  Specific energy:  -8.14 km^2/s^2
+  Angular momentum: 68539.0 km^2/s
+
+=== Molniya-like ===
+Orbit(a=26560.0 km, e=0.7400)
+  Periapsis:        6905.6 km  |  speed: 10.022 km/s
+  Apoapsis:         46214.4 km  |  speed: 1.498 km/s
+  Period:           717.96 min
+  Specific energy:  -7.50 km^2/s^2
+  Angular momentum: 69206.1 km^2/s
+```
+
 ## Validation
 
 ### Automated self-checks
 
-`run_self_checks()` runs on every start and stops with `AssertionError` if anything is wrong:
+Each file's self-checks run when that file is executed directly (`py calculator.py`, `py orbit_class.py`), not when it is imported. They stop with `AssertionError` if anything is wrong.
+
+`calculator.py` — `run_self_checks()`:
 
 - 400 km → LEO; 2,000 km → LEO (boundary inclusive); 2,001 km → MEO.
 - 20,200 km → MEO (GPS altitude); 35,786 km → GEO; 50,000 km → Beyond GEO.
 - 0 km and -5 km raise `ValueError`.
 - Consistency check: v × T = 2πr at all six valid altitudes.
+
+`orbit_class.py` — `run_checks()`:
+
+- Circular orbit (e = 0): periapsis equals apoapsis; ISS period ≈ 92.6 min.
+- Specific energy is negative and equals −μ/2a.
+- Transfer orbit vis-viva speeds match hand values: 10.00 km/s at periapsis, 1.63 km/s at apoapsis (tolerance 0.01 km/s).
+- Energy conservation: v²/2 − μ/r is the same at periapsis and apoapsis.
+- Invalid inputs raise `ValueError`: e ≥ 1, semi-major axis below Earth's radius, and periapsis inside the Earth (e.g. a = 7,000 km, e = 0.5 gives r_p = 3,500 km).
 
 ### Physics sanity checks against known results
 
@@ -185,10 +271,23 @@ All program results agree with hand calculations to 3 significant figures.
 
 **Speed ratio check:** ISS speed / GEO speed = 7.664 / 3.075 ≈ 2.49 = sqrt(42,164 / 6,786). Consistent.
 
+### Hand calculation — energy, angular momentum and vis-viva
+
+| Quantity | Hand value | Program |
+|---|---|---|
+| ISS specific energy, −μ/(2 × 6,778) | −29.40 km²/s² | −29.40 km²/s² |
+| ISS angular momentum, sqrt(μ × 6,778 × (1 − 0.001²)) | 51,978 km²/s | 51,978.0 km²/s |
+| Transfer speed at periapsis (r = 6,851.9 km, a = 24,471 km) | 10.00 km/s | 10.003 km/s |
+| Transfer speed at apoapsis (r = 42,090.1 km, a = 24,471 km) | 1.63 km/s | 1.628 km/s |
+
+**Why the transfer apoapsis speed is 1.63 km/s, not 3.07 km/s:** 3.07 km/s is the speed of a circular GEO orbit. The transfer orbit reaches GEO altitude about 1.44 km/s slower, which is the circularisation burn of a Hohmann transfer. An earlier version of the self-check expected 3.07 km/s; the check failed, and the expected value was corrected.
+
 ## Limitations
 
-- Period and speed assume a circular two-body orbit. J2, atmospheric drag and third-body effects are ignored.
+- Period and speed assume two-body motion around a point-mass Earth. J2, atmospheric drag and third-body effects are ignored.
 - Altitude is above a spherical Earth using the equatorial radius. Real altitude varies with latitude and orbit shape.
-- The calculator takes one altitude at a time and does not handle elliptical orbits.
+- `calculator.py` takes one altitude at a time and assumes circular orbits; `orbit_class.py` handles elliptical orbits.
+- `orbit_class.py` rejects orbits whose periapsis is inside the Earth, but does not yet allow for the atmosphere: an orbit with periapsis below about 150 km would decay within hours.
+- `Orbit` describes the size and shape of an orbit only, not its orientation in space (inclination, RAAN, argument of periapsis) or where the satellite is at a given time.
 - The parser input file path is fixed (`data/satellites.txt`) and is not accepted as a command-line argument.
 
