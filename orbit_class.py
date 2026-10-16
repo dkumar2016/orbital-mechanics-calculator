@@ -14,10 +14,13 @@ class Orbit:
     """
 
     def __init__(self, a, e):
-        if a <= R_EARTH:
-            raise ValueError(f"Semi-major axis must be > Earth radius ({R_EARTH} km), got {a}.")
         if not (0 <= e < 1):
             raise ValueError(f"Eccentricity must be 0 <= e < 1, got {e}.")
+        r_p = a * (1 - e)
+        if r_p <= R_EARTH:
+            raise ValueError(
+                f"Periapsis {r_p:.1f} km is inside the Earth (R = {R_EARTH} km)."
+            )
         self.a = a
         self.e = e
 
@@ -124,6 +127,12 @@ def run_checks():
     else:
         raise AssertionError("Should have raised ValueError for e >= 1")
 
+    try:
+        Orbit(7000.0, 0.5)   # a > R_EARTH, but periapsis = 3500 km
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Should have raised ValueError for periapsis inside Earth")
     print("\nAll checks passed.")
 
 if __name__ == "__main__":
