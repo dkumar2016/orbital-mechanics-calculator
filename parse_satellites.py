@@ -1,23 +1,10 @@
-""" Project: satellite file parser
+"""Satellite file parser: reads data/satellites.txt (NORAD_ID NAME ALTITUDE_KM),
+skips invalid lines with a reason, computes orbit values for each valid satellite,
+and writes output/satellites.csv and output/satellites.json.
 
-Problem statement
-
-Task: Read a text file listing satellites, and for each valid one report its orbit class, orbital radius, circular speed and period.
-
-Input file (data/satellites.txt): one satellite per line, in the form NORAD_ID NAME ALTITUDE_KM, for example 25544 ISS 408. The first item is the ID, the last item is the altitude, and anything between them is the name. Create about 10 lines yourself from real satellites you know. Include deliberately bad lines: a blank line, a line with a missing altitude, a non-numeric altitude, and a negative altitude.
-
-Rules:
-
-A bad line must not crash the program. It is skipped, and the reason is recorded.
-Use your Day 1 functions (classify_orbit, orbital_radius, orbital_period_min) by importing them from calculator.py. Do not copy the code.
-Add a new function circular_speed_km_s(altitude) to calculator.py, with the same validation as the others, and a self-check that compares it with your hand calculation.
-
-Outputs:
-
-A table printed to the console.
-output/satellites.csv with columns: id, name, altitude_km, orbit_class, radius_km, speed_km_s, period_min.
-output/satellites.json with the same data.
-A skipped-lines report: line number, line text and reason. """
+Run directly:  py parse_satellites.py
+Run the tests: pytest -v
+"""
 
 
 
@@ -86,10 +73,6 @@ def read_satellites(path):
                             "line": line.rstrip("\n"),
                             "reason": str(err)})
     return good, bad
-
-def save_json(data, path):
-    with open(path, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2)
 
 def load_json(path):
     try:
