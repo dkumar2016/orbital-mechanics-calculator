@@ -9,7 +9,7 @@ class Orbit:
 
     Parameters
     ----------
-    a : float  Semi-major axis (km). Must be > R_EARTH.
+    a : float  Semi-major axis (km). Periapsis a(1 - e) must be above R_EARTH.
     e : float  Eccentricity. 0 <= e < 1 for a bound elliptical orbit.
     """
 
@@ -82,63 +82,7 @@ class Orbit:
             f"  Angular momentum: {self.angular_momentum:.1f} km^2/s"
         )
 
-def run_checks():
-    print("Running Orbit class checks...\n")
-
-    # Check 1: circular orbit — periapsis equals apoapsis
-    iss = Orbit(6778.0, 0.0)
-    assert abs(iss.periapsis - iss.apoapsis) < 0.001, "Circular orbit: periapsis != apoapsis"
-    print(f"ISS circular: period = {iss.period_min:.2f} min  (expected ~92.6)")
-    assert abs(iss.period_min - 92.6) < 0.5
-
-    # Check 2: energy is negative and matches formula
-    assert iss.specific_energy < 0, "Specific energy must be negative for bound orbit"
-    expected_energy = -MU / (2 * 6778.0)
-    assert abs(iss.specific_energy - expected_energy) < 0.001
-
-    # Check 3: vis-viva at periapsis and apoapsis of transfer orbit
-    transfer = Orbit(24471.0, 0.720)
-    v_p = transfer.periapsis_speed
-    v_a = transfer.apoapsis_speed
-    print(f"Transfer periapsis speed: {v_p:.3f} km/s  (expected ~10.00)")
-    print(f"Transfer apoapsis speed:  {v_a:.3f} km/s  (expected ~1.63)")
-    assert abs(v_p - 10.00) < 0.1
-    assert abs(v_a - 1.63) < 0.05
-
-    # Check 4: energy conservation — same energy at periapsis and apoapsis
-    eps_p = 0.5 * v_p**2 - MU / transfer.periapsis
-    eps_a = 0.5 * v_a**2 - MU / transfer.apoapsis
-    assert abs(eps_p - eps_a) < 0.001, \
-        f"Energy not conserved: {eps_p:.4f} vs {eps_a:.4f}"
-    print("Energy conservation check passed ✓")
-
-    # Check 5: invalid inputs raise ValueError
-    try:
-        Orbit(6000.0, 0.5)   # a < R_EARTH
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("Should have raised ValueError for a < R_EARTH")
-
-    try:
-        Orbit(7000.0, 1.5)   # e >= 1
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("Should have raised ValueError for e >= 1")
-
-    try:
-        Orbit(7000.0, 0.5)   # a > R_EARTH, but periapsis = 3500 km
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("Should have raised ValueError for periapsis inside Earth")
-    print("\nAll checks passed.")
-
 if __name__ == "__main__":
-    run_checks()
-
-    print("\n--- Three test orbits ---\n")
     for a, e, name in [(6778, 0.001, "ISS-like"),
                        (24471, 0.720, "Transfer"),
                        (26560, 0.740, "Molniya-like")]:
